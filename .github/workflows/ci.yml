@@ -1,0 +1,84 @@
+---
+name: Build
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  workflow_dispatch:
+# permissions: read-all
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: [1.23.x]
+    runs-on: ubuntu-latest
+    permissions:
+      # kics-scan ignore-line
+      id-token: write
+    services:
+      wiremock:
+        image: wiremock/wiremock:3.10.0
+        ports:
+          - 9000:8080
+    # services:
+    #   db:
+    #     image: mysql:5.7
+    #     ports:
+    #       - 3306:3306
+    #     env:
+    #       MYSQL_ROOT_PASSWORD:
+    #       MYSQL_DATABASE: todo
+    #     options: >-
+    #       --health-cmd "mysqladmin ping"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -X POST -d @./wiremock/mappings/request.json http://localhost:9000/__admin/mappings
+      - run: curl http://localhost:9000/user/1
+
+      - run: |
+          sudo systemctl start mysql.service
+          mysql -u root -proot -e "CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';"
+          mysql -u root -proot -e "GRANT ALL ON todo.* TO 'user'@'localhost';"
+          mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS todo;"
+          mysql -uroot -proot -e "SHOW DATABASES;"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Cache go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: 'web/node_modules'
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23.4'
+
+      - uses: arduino/setup-task@v2
+
+      - run: task build
+
+      - run: go install github.com/k1LoW/runn/cmd/runn@latest
+
+      - run: app/app & runn run runn.yml

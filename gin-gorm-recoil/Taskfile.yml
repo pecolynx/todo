@@ -1,0 +1,51 @@
+---
+version: "3"
+
+tasks:
+  hello:
+    cmds:
+      - echo 'Hello World from Task!'
+    silent: true
+  web-build:
+    cmds:
+      - |
+        pushd web
+        pnpm install
+        pnpm run build
+        popd
+      - |
+        pushd app
+        rm -rf web_dist/*
+        popd
+      - cp -r web/dist/* app/web_dist/
+  web-format:
+    dir: web
+    cmds:
+      - pnpm run check
+      - pnpm run format
+  app-build:
+    dir: app
+    cmds:
+      - go build -o todo-app
+  build:
+    cmds:
+      - task: web-build
+      - task: app-build
+      
+  docker-run:
+    cmds:
+      - docker compose up --build
+  trivy:
+    cmds:
+      - trivy filesystem --format sarif --debug --exit-code 1 .
+      - trivy config --format sarif --debug --exit-code 1 .
+  trivy-reviewdog:
+    cmds:
+      - trivy filesystem --format sarif --debug --exit-code 1 . | reviewdog -f=sarif -fail-on-error=true level=high filter_mode=nofilter
+  wiremock-1:
+    cmds:
+      - docker run -it --rm -p 8080:8080 --name wiremockt wiremock/wiremock:3.10.0
+  wiremock:
+    cmds:
+      - docker run -it --rm -p 9000:8080 --name wiremock -v $PWD/wiremock:/home/wiremock wiremock/wiremock:3.10.0
+# docker run -it --rm -p 8080:8080 --name wiremock -v $PWD/wiremock:/home/wiremock wiremock/wiremock:3.10.0

@@ -1,0 +1,39 @@
+---
+services:
+  mysql:
+    image: mysql:8.0.27
+    container_name: todo-mysql
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_bin
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: todo
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+    ports:
+      - 3306:3306
+    networks:
+      - todo
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: todo-app
+    environment:
+      MYSQL_HOST: mysql
+    ports:
+      - 8080:8080
+    networks:
+      - todo
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+networks:
+  todo:
+    driver: bridge
