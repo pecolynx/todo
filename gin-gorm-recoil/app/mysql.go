@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -11,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func OpenMySQL(username, password, host string, port int, database string, logger *slog.Logger) (*gorm.DB, error) {
+func OpenMySQL(username, password, host string, port int, database string) (*gorm.DB, error) {
 	c := mysql.Config{
 		DBName:               database,
 		User:                 username,
@@ -23,12 +22,13 @@ func OpenMySQL(username, password, host string, port int, database string, logge
 		Params:               map[string]string{"charset": "utf8mb4"},
 		Collation:            "utf8mb4_bin",
 		AllowNativePasswords: true,
+		CheckConnLiveness:    true,
+		MaxAllowedPacket:     64 << 20, // 64 MiB.
 		Loc:                  time.UTC,
 	}
 	dsn := c.FormatDSN()
 	return gorm.Open(gorm_mysql.Open(dsn), &gorm.Config{
 		Logger: slog_gorm.New(
-			slog_gorm.WithHandler(logger.Handler()),
 			slog_gorm.WithTraceAll(), // trace all messages
 		),
 	})

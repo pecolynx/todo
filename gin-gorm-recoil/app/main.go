@@ -28,7 +28,7 @@ func main() {
 	if mysqlHost == "" {
 		mysqlHost = "localhost"
 	}
-	db, err := OpenMySQL("user", "password", mysqlHost, 3306, "todo", slog.Default())
+	db, err := OpenMySQL("user", "password", mysqlHost, 3306, "todo")
 	if err != nil {
 		panic(err)
 	}
