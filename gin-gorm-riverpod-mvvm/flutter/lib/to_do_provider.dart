@@ -2,6 +2,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:todo/to_do_item.dart';
 
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'to_do_provider.g.dart';
+
+@riverpod
+ToDoRepository toDoRepository(Ref ref) {
+  return ToDoRepository();
+}
+
+@riverpod
+Future<List<ToDoItem>> xxfetchToDoList(Ref ref) async {
+  final toDoRepository = ref.watch(toDoRepositoryProvider);
+  return toDoRepository.fetchToDoList();
+}
+
+class ToDoRepository {
+  Future<List<ToDoItem>> fetchToDoList() async {
+    return [
+      ToDoItem(title: 'First Item', isDone: false),
+      ToDoItem(title: 'Second Item', isDone: true),
+    ];
+  }
+
+  Future<void> addTodo(ToDoItem todo) async {}
+}
+
+//
 final toDoListProvider = NotifierProvider<TodoListNotifier, List<ToDoItem>>(
     () => TodoListNotifier());
 
