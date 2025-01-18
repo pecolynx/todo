@@ -2,13 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:todo/to_do_item.dart';
 
-final toDoListProvider =
-    StateNotifierProvider<TodoListNotifier, List<ToDoItem>>((ref) {
-  return TodoListNotifier();
-});
+final toDoListProvider = NotifierProvider<TodoListNotifier, List<ToDoItem>>(
+    () => TodoListNotifier());
 
-class TodoListNotifier extends StateNotifier<List<ToDoItem>> {
-  TodoListNotifier() : super([]);
+class TodoListNotifier extends Notifier<List<ToDoItem>> {
+  @override
+  List<ToDoItem> build() => [];
 
   void addTodo(ToDoItem todo) {
     state = [...state, todo];
@@ -37,6 +36,7 @@ class TodoListNotifier extends StateNotifier<List<ToDoItem>> {
       ...state.sublist(index + 1),
     ];
   }
+
   // void toggleDone(int id) {
   //   state = state
   //       .map((todo) => ((id == todo.id)
